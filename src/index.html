@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FitGPT Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+</head>
+<body class="h-screen bg-gray-100 dark:bg-gray-800 text-black dark:text-white font-sans">
+  <div class="flex h-full">
+
+    <!-- Toggle Sidebar Button (initially visible) -->
+<button id="toggle-sidebar" class="absolute top-4 left-4 z-20 bg-gray-800 text-white p-2 rounded-md">
+  ☰
+</button>
+
+<!-- Sidebar -->
+<div id="sidebar" class="fixed top-0 left-0 w-64 h-full bg-gray-900 text-white p-4 transform transition-transform duration-300 -translate-x-full z-10">
+  <!-- Hide Sidebar Button -->
+  <button id="hide-sidebar" class="text-white text-xl mb-4">✖</button>
+  <p class="text-lg font-bold">FitGPT</p>
+  <button id="theme-toggle" class="bg-gray-200 dark:bg-gray-700 text-black dark:text-white px-4 py-2 rounded">
+    Toggle Dark Mode
+  </button>
+</div>
+
+
+
+    <!-- Main Chat Area -->
+    <main class="flex flex-col flex-1 ml-0 md:ml-64 transition-all duration-300">
+      <div id="chat-body" class="flex-1 p-6 overflow-y-auto space-y-4"></div>
+
+      <!-- Chat Input -->
+      <div class="flex items-center justify-center gap-2 p-4 border-t bg-white mb-12 rounded-lg dark:bg-gray-700">
+        <input type="text" id="input-box" placeholder="Send a message..." class="flex-1 max-w-xl px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400
+        bg-white text-black dark:bg-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"  />
+        <button onclick="startVoice()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full text-xl">🎙️</button>
+        <button id="send-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full">Send</button>
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
