@@ -7,44 +7,86 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      darkMode: 'class',
-    }
+      darkMode: false,
+      theme: {
+        extend: {
+          fontFamily: {
+            custom: ['"Segoe UI"', 'sans-serif']
+          }
+        }
+      }
+    };
   </script>
 </head>
-<body class="h-screen bg-gray-100 dark:bg-gray-800 text-black dark:text-white font-sans">
-  <div class="flex h-full">
+<body class="font-custom bg-gradient-to-br from-purple-300 via-pink-200 to-yellow-200 min-h-screen flex items-center justify-center">
 
-    <!-- Toggle Sidebar Button (initially visible) -->
-<button id="toggle-sidebar" class="absolute top-4 left-4 z-20 bg-gray-800 text-white p-2 rounded-md">
-  ☰
-</button>
+  
+  <!-- Chat UI -->
+  <div id="chat-ui" class="w-full h-screen bg-white/80 backdrop-blur-xl shadow-inner flex flex-col">
 
-<!-- Sidebar -->
-<div id="sidebar" class="fixed top-0 left-0 w-64 h-full bg-gray-900 text-white p-4 transform transition-transform duration-300 -translate-x-full z-10">
-  <!-- Hide Sidebar Button -->
-  <button id="hide-sidebar" class="text-white text-xl mb-4">✖</button>
-  <p class="text-lg font-bold">FitGPT</p>
-  <button id="theme-toggle" class="bg-gray-200 dark:bg-gray-700 text-black dark:text-white px-4 py-2 rounded">
-    Toggle Dark Mode
-  </button>
-</div>
-
-
-
-    <!-- Main Chat Area -->
-    <main class="flex flex-col flex-1 ml-0 md:ml-64 transition-all duration-300">
-      <div id="chat-body" class="flex-1 p-6 overflow-y-auto space-y-4"></div>
-
-      <!-- Chat Input -->
-      <div class="flex items-center justify-center gap-2 p-4 border-t bg-white mb-12 rounded-lg dark:bg-gray-700">
-        <input type="text" id="input-box" placeholder="Send a message..." class="flex-1 max-w-xl px-4 py-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400
-        bg-white text-black dark:bg-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"  />
-        <button onclick="startVoice()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full text-xl">🎙️</button>
-        <button id="send-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full">Send</button>
+    <!-- Topbar -->
+    <div class="flex justify-between items-center px-6 py-4 bg-white shadow-md">
+      <h1 class="text-2xl font-bold text-purple-700">FitGPT Chat</h1>
+      <div class="relative">
+        <button id="user-icon" class="text-2xl p-2 bg-purple-100 rounded-full" >👤</a></button>
+        <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-40 bg-white shadow-md rounded-lg overflow-hidden">
+          <a href="#" id="view-profile" class="block px-4 py-2 hover:bg-purple-100">View Profile</a>
+          <a href="#" id="logout" class="block px-4 py-2 text-red-600 hover:bg-purple-100">Logout</a>
+        </div>
       </div>
-    </main>
+    </div>
+
+    <!-- Chat messages -->
+    <div id="chat-body" class="flex-1 p-6 overflow-y-auto space-y-4 bg-gradient-to-br from-white to-purple-100"></div>
+
+    <!-- Input area -->
+    <div class="flex items-center justify-center gap-2 p-4 border-t bg-white shadow-inner">
+      <input type="text" id="input-box" placeholder="Type a message..." autocomplete="off" class="flex-1 px-4 py-3 border rounded-full focus:outline-none focus:ring-2 focus:ring-purple-400" />
+      <button id="voice-btn" class="text-2xl bg-pink-500 hover:bg-pink-600 text-white p-3 rounded-full">🎙️</button>
+      <button id="send-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-full">Send</button>
+    </div>
   </div>
 
+  <!-- External Script -->
   <script src="script.js"></script>
+  <script>
+    // Toggle dropdown visibility
+    document.getElementById("user-icon").addEventListener("click", () => {
+      const dropdown = document.getElementById("user-dropdown");
+      dropdown.classList.toggle("hidden");
+    });
+  
+    // Handle View Profile click
+    document.getElementById("view-profile").addEventListener("click", function (e) {
+      e.preventDefault();
+  
+      const userId = localStorage.getItem("user_id"); // Use your login key name
+  
+      if (!userId) {
+        // Not logged in → redirect to login page
+        window.location.href = "login.html";
+      } else {
+        // Logged in → just alert or do nothing
+        alert("You're already logged in!");
+        // or show a modal, or just close dropdown
+        document.getElementById("user-dropdown").classList.add("hidden");
+      }
+    });
+  
+    // Logout
+    document.getElementById("logout").addEventListener("click", function (e) {
+      e.preventDefault();
+  
+      // Remove user session
+      localStorage.removeItem("user_id");
+  
+      // Optionally redirect to login or refresh
+      window.location.href = "login.html";
+    });
+
+    
+
+  </script>
+  
 </body>
 </html>

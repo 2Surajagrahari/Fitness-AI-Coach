@@ -5,55 +5,52 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggleSidebar = document.getElementById("toggle-sidebar");
   const hideSidebar = document.getElementById("hide-sidebar");
   const themeToggle = document.getElementById("theme-toggle");
+  const userIcon = document.getElementById("user-icon");
+  const userDropdown = document.getElementById("user-dropdown");
+  const viewProfile = document.getElementById("view-profile");
+  const logoutBtn = document.getElementById("logout");
 
-  // Attach event listeners
-  document.getElementById("send-btn").addEventListener("click", sendMessage);
+  // ✅ Persistent user ID using localStorage
+  let userId = localStorage.getItem("chat_user_id");
+
+  if (!userId) {
+    userId = `user_${Date.now()}`;
+    localStorage.setItem("chat_user_id", userId);
+  }
+
+  // ✉️ Send message
+  document.getElementById("send-btn").addEventListener("click", (e) => {
+    e.preventDefault();
+    sendMessage();
+  });
+
   inputBox.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") sendMessage();
-  });
-
-  hideSidebar.addEventListener("click", () => {
-    sidebar.classList.add("-translate-x-full");
-    toggleSidebar.classList.remove("hidden");
-  });
-
-  toggleSidebar.addEventListener("click", () => {
-    sidebar.classList.remove("-translate-x-full");
-    toggleSidebar.classList.add("hidden");
-  });
-
-  themeToggle.addEventListener("click", () => {
-    document.documentElement.classList.toggle("dark");
+    if (e.key === "Enter") {
+      e.preventDefault();
+      sendMessage();
+    }
   });
 
   function sendMessage() {
     const msg = inputBox.value.trim();
     if (!msg) return;
 
-    console.log("Sending message:", msg);
     addMessage("user", msg);
     inputBox.value = "";
 
     fetch("http://127.0.0.1:5000/chat", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        message: msg,
-        session_id: "user1"
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msg, user_id: userId })
     })
-      .then(res => {
-        if (!res.ok) throw new Error("Network response was not ok");
-        return res.json();
-      })
+      .then(res => res.json())
       .then(data => {
-        addMessage("bot", data.reply);
+        const reply = data.reply || "No reply received.";
+        addMessage("bot", reply);
       })
-      .catch(error => {
-        console.error("Error from fetch:", error);
-        addMessage("bot", "Sorry, I ran into an issue. Please try again!");
+      .catch(err => {
+        console.error("Chat fetch error:", err);
+        addMessage("bot", "⚠️ Error sending message.");
       });
   }
 
@@ -74,11 +71,11 @@ document.addEventListener("DOMContentLoaded", () => {
     chatBody.scrollTop = chatBody.scrollHeight;
   }
 
+  // 🎤 Voice input
   function startVoice() {
     const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
     recognition.lang = 'en-US';
     recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
 
     recognition.onresult = function (event) {
       const voiceInput = event.results[0][0].transcript;
@@ -93,5 +90,104 @@ document.addEventListener("DOMContentLoaded", () => {
     recognition.start();
   }
 
-  window.startVoice = startVoice; // Make it globally available if using onclick
+  window.startVoice = startVoice;
+
+  // 🌙 Theme toggle
+  themeToggle?.addEventListener("click", () => {
+    document.documentElement.classList.toggle("dark");
+  });
+
+  // 📁 Sidebar toggle
+  hideSidebar?.addEventListener("click", () => {
+    sidebar.classList.add("-translate-x-full");
+    toggleSidebar.classList.remove("hidden");
+  });
+
+  toggleSidebar?.addEventListener("click", () => {
+    sidebar.classList.remove("-translate-x-full");
+    toggleSidebar.classList.add("hidden");
+  });
+
+  // 👤 User dropdown
+  userIcon.addEventListener("click", () => {
+    userDropdown.classList.toggle("hidden");
+  });
+
+  // 👁️ View Profile
+  viewProfile.addEventListener("click", async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await fetch(`http://localhost:5000/profile/${userId}`);
+      const data = await res.json();
+
+      if (data.error) {
+        alert("❌ User not found");
+      } else {
+        alert(`👤 Profile Info:\nName: ${data.name}\nEmail: ${data.email}`);
+      }
+    } catch (err) {
+      console.error("Failed to fetch profile:", err);
+      alert("⚠️ Could not load profile.");
+    }
+  });
+
+  // 🚪 Logout
+  logoutBtn.addEventListener("click", () => {
+    localStorage.removeItem("chat_user_id");
+    location.reload();
+  });
+
+  // 🔐 Auth logic
+  window.signup = async function () {
+    const username = document.getElementById("auth-username").value;
+    const password = document.getElementById("auth-password").value;
+
+    const res = await fetch("http://localhost:5000/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+    document.getElementById("auth-status").innerText = data.message || data.error;
+
+    if (res.ok) {
+      userId = data.user_id;
+      localStorage.setItem("chat_user_id", userId);
+      document.getElementById("auth-section").classList.add("hidden");
+      loadProfile();
+    }
+  };
+
+  window.login = async function () {
+    const username = document.getElementById("auth-username").value;
+    const password = document.getElementById("auth-password").value;
+
+    const res = await fetch("http://localhost:5000/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json();
+    document.getElementById("auth-status").innerText = data.message || data.error;
+
+    if (res.ok) {
+      userId = data.user_id;
+      localStorage.setItem("chat_user_id", userId);
+      document.getElementById("auth-section").classList.add("hidden");
+      loadProfile();
+    }
+  };
+
+  async function loadProfile() {
+    try {
+      const res = await fetch(`http://localhost:5000/profile/${userId}`);
+      const user = await res.json();
+      alert(`Welcome, ${user.username}!`);
+    } catch (err) {
+      console.error("Error loading profile:", err);
+    }
+  }
 });

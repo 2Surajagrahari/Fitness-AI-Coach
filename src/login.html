@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FitGPT - Login/Signup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<style>
+    body {
+      background: linear-gradient(to right, #667eea, #764ba2);
+    }
+  </style>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
+  <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+    <!-- Logo and Title -->
+    <div class="flex flex-col items-center mb-6">
+      <img src="fitness.png" alt="Fit Logo" class="w-16 h-16">
+      <h1 class="text-2xl font-bold text-gray-800 mt-2">FitGPT</h1>
+      <p id="form-title" class="text-sm text-gray-500">Your AI Fitness Coach - Sign Up</p>
+    </div>
+
+    <!-- Form -->
+    <form id="auth-form">
+      <!-- Name (only for signup) -->
+      <div id="name-field" class="mb-4">
+        <label for="name" class="block text-sm font-medium text-gray-700">Name</label>
+        <input type="text" id="name" class="w-full px-4 py-2 border rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="John Doe" />
+      </div>
+
+      <!-- Email -->
+      <div class="mb-4">
+        <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+        <input type="email" id="email" class="w-full px-4 py-2 border rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="john@example.com" />
+      </div>
+
+      <!-- Username -->
+      <div class="mb-4">
+        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+        <input type="text" id="username" class="w-full px-4 py-2 border rounded-lg mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="john123" />
+      </div>
+
+      <!-- Password -->
+      <div class="mb-6 relative">
+        <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+        <div class="relative">
+          <input type="password" id="password" class="w-full px-4 py-2 border rounded-lg mt-1 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••" />
+          <span class="absolute top-3 right-3 text-gray-600 cursor-pointer" onclick="togglePassword()">
+            <i id="eye-icon" class="fas fa-eye"></i>
+          </span>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" id="submit-btn" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition duration-200">
+        Sign Up
+      </button>
+    </form>
+
+    <!-- Toggle Login/Signup -->
+    <p class="text-sm text-gray-600 text-center mt-4">
+      <span id="toggle-text">Already have an account?</span>
+      <a href="#" class="text-blue-500 hover:underline" onclick="toggleForm()">Log in</a>
+    </p>
+  </div>
+
+  <!-- JS for interactivity -->
+  <script>
+    let isLogin = false;
+  
+    function toggleForm() {
+      isLogin = !isLogin;
+  
+      const formTitle = document.getElementById("form-title");
+      const submitBtn = document.getElementById("submit-btn");
+      const toggleText = document.getElementById("toggle-text");
+      const toggleLink = document.querySelector("a");
+  
+      // Toggle name field
+      document.getElementById("name-field").style.display = isLogin ? "none" : "block";
+  
+      // Update text
+      formTitle.textContent = isLogin ? "Your AI Fitness Coach - Log In" : "Your AI Fitness Coach - Sign Up";
+      submitBtn.textContent = isLogin ? "Log In" : "Sign Up";
+      toggleText.textContent = isLogin ? "Don't have an account?" : "Already have an account?";
+      toggleLink.textContent = isLogin ? "Sign up" : "Log in";
+    }
+  
+    function togglePassword() {
+      const passwordInput = document.getElementById("password");
+      const eyeIcon = document.getElementById("eye-icon");
+  
+      if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        eyeIcon.classList.remove("fa-eye");
+        eyeIcon.classList.add("fa-eye-slash");
+      } else {
+        passwordInput.type = "password";
+        eyeIcon.classList.remove("fa-eye-slash");
+        eyeIcon.classList.add("fa-eye");
+      }
+    }
+  
+    document.getElementById("auth-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+  
+      const name = document.getElementById("name")?.value.trim();
+      const email = document.getElementById("email")?.value.trim();
+      const username = document.getElementById("username")?.value.trim();
+      const password = document.getElementById("password")?.value.trim();
+  
+      if (!username || !password || (!isLogin && (!name || !email))) {
+        alert("Please fill all required fields.");
+        return;
+      }
+  
+      const payload = isLogin
+        ? { username, password }
+        : { name, email, username, password };
+  
+      const url = isLogin
+        ? "http://localhost:5000/login"
+        : "http://localhost:5000/signup";
+  
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+  
+        const data = await res.json();
+  
+        if (res.ok) {
+          localStorage.setItem("user_id", data.user_id); // store user id
+          alert("Welcome, " + data.username + "!");
+  
+          // ✅ Redirect to main page after login/signup
+          window.location.href = "index.html";
+        } else {
+          alert(data.message || "Something went wrong.");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        alert("Network error.");
+      }
+    });
+  </script>
+  
+</body>
+</html>
