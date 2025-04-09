@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FitGPT Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex items-center justify-center p-4">
+
+  <div class="max-w-4xl w-full bg-white rounded-2xl shadow-lg p-6 space-y-6">
+    <div class="flex justify-between items-center">
+      <div>
+        <h1 class="text-3xl font-bold text-blue-700 mb-1"><i class="fas fa-walking"></i> Activity Dashboard</h1>
+        <p class="text-gray-600" id="current-date"></p>
+      </div>
+      <a href="index.html" class="text-blue-600 hover:text-blue-800">
+        <i class="fas fa-comments text-2xl"></i>
+      </a>
+    </div>
+
+    <div class="bg-white rounded-xl p-4 shadow-md mb-6">
+      <h2 class="text-xl font-semibold mb-3 text-gray-700"><i class="fas fa-edit"></i> Manual Entry</h2>
+      <form id="manual-entry-form" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Steps</label>
+          <input type="number" id="manual-steps" class="w-full px-3 py-2 border rounded-lg" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Calories</label>
+          <input type="number" step="0.1" id="manual-calories" class="w-full px-3 py-2 border rounded-lg" required>
+        </div>
+        <div class="flex items-end">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full">
+            Save Entry
+          </button>
+        </div>
+      </form>
+    </div>
+    
+    <div class="bg-blue-100 p-4 rounded-xl flex items-center justify-between shadow-md">
+      <div class="flex items-center gap-4">
+        <i class="fas fa-fire text-3xl text-orange-500"></i>
+        <div>
+          <h2 class="text-xl font-semibold">Current Streak</h2>
+          <p class="text-gray-700 text-sm"><span id="streak-count">0</span> days</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-green-50 p-4 rounded-xl shadow-md">
+      <h2 class="text-xl font-semibold mb-3 text-gray-700"><i class="fas fa-calendar-check"></i> Recent Days</h2>
+      <div id="daysQueue" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+    </div>
+
+    <div class="bg-white rounded-xl p-4 shadow-md">
+      <h2 class="text-xl font-semibold mb-2 text-center text-gray-700"><i class="fas fa-chart-line"></i> Progress Chart</h2>
+      <canvas id="activityChart" height="150"></canvas>
+    </div>
+
+    <div class="overflow-x-auto bg-white shadow-md rounded-xl p-4">
+      <h2 class="text-xl font-semibold text-gray-700 mb-3"><i class="fas fa-list"></i> Activity History</h2>
+      <table class="w-full text-sm text-left text-gray-700">
+        <thead class="text-xs uppercase bg-gray-100 text-gray-600">
+          <tr>
+            <th scope="col" class="py-2 px-4">Date</th>
+            <th scope="col" class="py-2 px-4">Steps</th>
+            <th scope="col" class="py-2 px-4">Calories</th>
+          </tr>
+        </thead>
+        <tbody id="activityTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const userId = localStorage.getItem("user_id");
+      if (!userId) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      document.getElementById("current-date").innerText = `Today: ${new Date().toDateString()}`;
+      
+      try {
+        const res = await fetch(`http://localhost:5000/dashboard-data/${userId}`);
+        const data = await res.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
+        const labels = data.activity.map(item => item.date).reverse();
+        const stepData = data.activity.map(item => item.steps).reverse();
+        const calorieData = data.activity.map(item => item.calories).reverse();
+        
+        document.getElementById("streak-count").innerText = data.streak;
+        renderChart(labels, stepData, calorieData);
+        renderHistory(data.activity);
+        renderDaysQueue(data.activity);
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+        alert("Failed to load activity data");
+      }
+
+      // Manual data entry form
+      document.getElementById("manual-entry-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const steps = parseInt(document.getElementById("manual-steps").value);
+        const calories = parseFloat(document.getElementById("manual-calories").value);
+        
+        try {
+          await fetch("http://localhost:5000/save-activity", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              user_id: userId,
+              steps: steps,
+              calories: calories
+            })
+          });
+          location.reload(); //Refresh to show new data
+        } catch (error) {
+          alert("Failed to save activity");
+        }
+      });
+    });
+
+    function renderChart(labels, steps, calories) {
+      const ctx = document.getElementById("activityChart").getContext("2d");
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Steps",
+              data: steps,
+              borderColor: "rgb(59, 130, 246)",
+              backgroundColor: "rgba(59, 130, 246, 0.1)",
+              tension: 0.4,
+              fill: true
+            },
+            {
+              label: "Calories",
+              data: calories,
+              borderColor: "rgb(234, 88, 12)",
+              backgroundColor: "rgba(234, 88, 12, 0.1)",
+              tension: 0.4,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    function renderHistory(data) {
+      const tableBody = document.getElementById("activityTableBody");
+      tableBody.innerHTML = "";
+      data.forEach(item => {
+        const row = `
+          <tr>
+            <td class="py-2 px-4">${item.date}</td>
+            <td class="py-2 px-4">${item.steps}</td>
+            <td class="py-2 px-4">${item.calories}</td>
+          </tr>
+        `;
+        tableBody.innerHTML += row;
+      });
+    }
+
+    function renderDaysQueue(data) {
+      const container = document.getElementById("daysQueue");
+      container.innerHTML = "";
+      const goalSteps = 10000;
+      const sorted = data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      sorted.forEach(item => {
+        const reachedGoal = item.steps >= goalSteps;
+        const icon = reachedGoal
+          ? '<i class="fas fa-check-circle text-green-500 text-2xl"></i>'
+          : '<i class="fas fa-times-circle text-red-500 text-2xl"></i>';
+
+        const dayCard = `
+          <div class="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-sm">
+            <span class="text-gray-700 text-sm font-medium">${item.date}</span>
+            ${icon}
+          </div>
+        `;
+        container.innerHTML += dayCard;
+      });
+    }
+  </script>
+</body>
+</html>

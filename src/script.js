@@ -1,25 +1,19 @@
 document.addEventListener("DOMContentLoaded", () => {
   const chatBody = document.getElementById("chat-body");
   const inputBox = document.getElementById("input-box");
-  const sidebar = document.getElementById("sidebar");
-  const toggleSidebar = document.getElementById("toggle-sidebar");
-  const hideSidebar = document.getElementById("hide-sidebar");
-  const themeToggle = document.getElementById("theme-toggle");
-  const userIcon = document.getElementById("user-icon");
-  const userDropdown = document.getElementById("user-dropdown");
-  const viewProfile = document.getElementById("view-profile");
+  const sendBtn = document.getElementById("send-btn");
+  const voiceBtn = document.getElementById("voice-btn");
   const logoutBtn = document.getElementById("logout");
 
-  // ✅ Persistent user ID using localStorage
-  let userId = localStorage.getItem("chat_user_id");
-
+  // Check authentication
+  const userId = localStorage.getItem("user_id");
   if (!userId) {
-    userId = `user_${Date.now()}`;
-    localStorage.setItem("chat_user_id", userId);
+    window.location.href = "login.html";
+    return;
   }
 
   // ✉️ Send message
-  document.getElementById("send-btn").addEventListener("click", (e) => {
+  sendBtn.addEventListener("click", (e) => {
     e.preventDefault();
     sendMessage();
   });
@@ -60,9 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const bubble = document.createElement("div");
     bubble.className = `px-4 py-2 rounded-2xl shadow text-sm max-w-xs ${
-      sender === "user"
-        ? "bg-blue-500 text-white"
-        : "bg-gray-200 text-gray-900 dark:bg-gray-700 dark:text-white"
+      sender === "user" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-900"
     }`;
     bubble.textContent = text;
 
@@ -72,122 +64,33 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 🎤 Voice input
-  function startVoice() {
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+  voiceBtn.addEventListener("click", () => {
+    if (!('webkitSpeechRecognition' in window)) {
+      alert("Voice recognition not supported in your browser");
+      return;
+    }
+
+    const recognition = new webkitSpeechRecognition();
     recognition.lang = 'en-US';
     recognition.interimResults = false;
 
-    recognition.onresult = function (event) {
+    recognition.onresult = function(event) {
       const voiceInput = event.results[0][0].transcript;
       inputBox.value = voiceInput;
       sendMessage();
     };
 
-    recognition.onerror = function (event) {
+    recognition.onerror = function(event) {
       console.error("Speech error:", event.error);
     };
 
     recognition.start();
-  }
-
-  window.startVoice = startVoice;
-
-  // 🌙 Theme toggle
-  themeToggle?.addEventListener("click", () => {
-    document.documentElement.classList.toggle("dark");
-  });
-
-  // 📁 Sidebar toggle
-  hideSidebar?.addEventListener("click", () => {
-    sidebar.classList.add("-translate-x-full");
-    toggleSidebar.classList.remove("hidden");
-  });
-
-  toggleSidebar?.addEventListener("click", () => {
-    sidebar.classList.remove("-translate-x-full");
-    toggleSidebar.classList.add("hidden");
-  });
-
-  // 👤 User dropdown
-  userIcon.addEventListener("click", () => {
-    userDropdown.classList.toggle("hidden");
-  });
-
-  // 👁️ View Profile
-  viewProfile.addEventListener("click", async (e) => {
-    e.preventDefault();
-
-    try {
-      const res = await fetch(`http://localhost:5000/profile/${userId}`);
-      const data = await res.json();
-
-      if (data.error) {
-        alert("❌ User not found");
-      } else {
-        alert(`👤 Profile Info:\nName: ${data.name}\nEmail: ${data.email}`);
-      }
-    } catch (err) {
-      console.error("Failed to fetch profile:", err);
-      alert("⚠️ Could not load profile.");
-    }
   });
 
   // 🚪 Logout
-  logoutBtn.addEventListener("click", () => {
-    localStorage.removeItem("chat_user_id");
-    location.reload();
+  logoutBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    localStorage.removeItem("user_id");
+    window.location.href = "login.html";
   });
-
-  // 🔐 Auth logic
-  window.signup = async function () {
-    const username = document.getElementById("auth-username").value;
-    const password = document.getElementById("auth-password").value;
-
-    const res = await fetch("http://localhost:5000/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
-    });
-
-    const data = await res.json();
-    document.getElementById("auth-status").innerText = data.message || data.error;
-
-    if (res.ok) {
-      userId = data.user_id;
-      localStorage.setItem("chat_user_id", userId);
-      document.getElementById("auth-section").classList.add("hidden");
-      loadProfile();
-    }
-  };
-
-  window.login = async function () {
-    const username = document.getElementById("auth-username").value;
-    const password = document.getElementById("auth-password").value;
-
-    const res = await fetch("http://localhost:5000/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
-    });
-
-    const data = await res.json();
-    document.getElementById("auth-status").innerText = data.message || data.error;
-
-    if (res.ok) {
-      userId = data.user_id;
-      localStorage.setItem("chat_user_id", userId);
-      document.getElementById("auth-section").classList.add("hidden");
-      loadProfile();
-    }
-  };
-
-  async function loadProfile() {
-    try {
-      const res = await fetch(`http://localhost:5000/profile/${userId}`);
-      const user = await res.json();
-      alert(`Welcome, ${user.username}!`);
-    } catch (err) {
-      console.error("Error loading profile:", err);
-    }
-  }
 });

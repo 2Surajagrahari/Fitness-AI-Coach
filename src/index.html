@@ -19,27 +19,23 @@
   </script>
 </head>
 <body class="font-custom bg-gradient-to-br from-purple-300 via-pink-200 to-yellow-200 min-h-screen flex items-center justify-center">
-
   
-  <!-- Chat UI -->
   <div id="chat-ui" class="w-full h-screen bg-white/80 backdrop-blur-xl shadow-inner flex flex-col">
 
-    <!-- Topbar -->
     <div class="flex justify-between items-center px-6 py-4 bg-white shadow-md">
       <h1 class="text-2xl font-bold text-purple-700">FitGPT Chat</h1>
       <div class="relative">
-        <button id="user-icon" class="text-2xl p-2 bg-purple-100 rounded-full" >👤</a></button>
+        <button id="user-icon" class="text-2xl p-2 bg-purple-100 rounded-full">👤</button>
         <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-40 bg-white shadow-md rounded-lg overflow-hidden">
           <a href="#" id="view-profile" class="block px-4 py-2 hover:bg-purple-100">View Profile</a>
+          <a href="dashboard.html" class="block px-4 py-2 hover:bg-purple-100">Dashboard</a>
           <a href="#" id="logout" class="block px-4 py-2 text-red-600 hover:bg-purple-100">Logout</a>
         </div>
       </div>
     </div>
 
-    <!-- Chat messages -->
     <div id="chat-body" class="flex-1 p-6 overflow-y-auto space-y-4 bg-gradient-to-br from-white to-purple-100"></div>
 
-    <!-- Input area -->
     <div class="flex items-center justify-center gap-2 p-4 border-t bg-white shadow-inner">
       <input type="text" id="input-box" placeholder="Type a message..." autocomplete="off" class="flex-1 px-4 py-3 border rounded-full focus:outline-none focus:ring-2 focus:ring-purple-400" />
       <button id="voice-btn" class="text-2xl bg-pink-500 hover:bg-pink-600 text-white p-3 rounded-full">🎙️</button>
@@ -47,46 +43,24 @@
     </div>
   </div>
 
-  <!-- External Script -->
   <script src="script.js"></script>
   <script>
-    // Toggle dropdown visibility
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!localStorage.getItem("user_id")) {
+        window.location.href = "login.html";
+      }
+    });
+
     document.getElementById("user-icon").addEventListener("click", () => {
       const dropdown = document.getElementById("user-dropdown");
       dropdown.classList.toggle("hidden");
     });
   
-    // Handle View Profile click
-    document.getElementById("view-profile").addEventListener("click", function (e) {
+    document.getElementById("logout").addEventListener("click", function(e) {
       e.preventDefault();
-  
-      const userId = localStorage.getItem("user_id"); // Use your login key name
-  
-      if (!userId) {
-        // Not logged in → redirect to login page
-        window.location.href = "login.html";
-      } else {
-        // Logged in → just alert or do nothing
-        alert("You're already logged in!");
-        // or show a modal, or just close dropdown
-        document.getElementById("user-dropdown").classList.add("hidden");
-      }
-    });
-  
-    // Logout
-    document.getElementById("logout").addEventListener("click", function (e) {
-      e.preventDefault();
-  
-      // Remove user session
       localStorage.removeItem("user_id");
-  
-      // Optionally redirect to login or refresh
       window.location.href = "login.html";
     });
-
-    
-
   </script>
-  
 </body>
 </html>
