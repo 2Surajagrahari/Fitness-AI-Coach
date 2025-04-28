@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FitGPT Exercise Library</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    .exercise-card {
+      transition: all 0.3s ease;
+    }
+    .exercise-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    .filter-chip {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .filter-chip.active {
+      background-color: #8b5cf6;
+      color: white;
+    }
+    .video-placeholder {
+      background: linear-gradient(45deg, #f5f3ff, #ddd6fe);
+      position: relative;
+    }
+    #exercises-container {
+      min-height: 300px;
+    }
+  </style>
+</head>
+<body class="font-sans bg-gray-50 min-h-screen">
+  <!-- Header -->
+  <header class="bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <a href="index.html" class="text-2xl font-bold flex items-center">
+          <i class="fas fa-dumbbell mr-2"></i>
+          FitGPT
+        </a>
+      </div>
+      <nav class="flex items-center space-x-4">
+        <a href="index.html" class="hover:text-purple-200 transition">
+          <i class="fas fa-comments mr-1"></i> Chat
+        </a>
+        <a href="dashboard.html" class="hover:text-purple-200 transition">
+          <i class="fas fa-chart-line mr-1"></i> Dashboard
+        </a>
+        <a href="exercises.html" class="bg-white/20 px-3 py-1 rounded-lg">
+          <i class="fas fa-dumbbell mr-1"></i> Exercises
+        </a>
+        <div class="relative">
+          <button id="user-icon" class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition">
+            <i class="fas fa-user"></i>
+          </button>
+          <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg z-10 py-1">
+            <a href="#" class="block px-4 py-2 hover:bg-gray-100"><i class="fas fa-user-circle mr-2"></i> Profile</a>
+            <a href="#" id="logout" class="block px-4 py-2 text-red-600 hover:bg-gray-100"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-4 py-8">
+    <div class="mb-8 text-center">
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">Exercise Library</h1>
+      <p class="text-gray-600 max-w-2xl mx-auto">
+        Browse our collection of exercises with detailed instructions and demonstrations.
+      </p>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="relative flex-1">
+          <input 
+            type="text" 
+            id="exercise-search" 
+            placeholder="Search exercises..." 
+            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+          >
+          <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button class="filter-chip px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm active" data-filter="all">
+            All Exercises
+          </button>
+          <button class="filter-chip px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm" data-filter="chest">
+            Chest
+          </button>
+          <button class="filter-chip px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm" data-filter="back">
+            Back
+          </button>
+          <button class="filter-chip px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm" data-filter="legs">
+            Legs
+          </button>
+          <button class="filter-chip px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm" data-filter="arms">
+            Arms
+          </button>
+          <button class="filter-chip px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm" data-filter="core">
+            Core
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exercises Grid -->
+    <div id="exercises-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Exercises will load here -->
+    </div>
+
+    <!-- Exercise Details Modal -->
+    <div id="exercise-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20 hidden">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="p-4 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+          <h3 id="modal-title" class="text-xl font-bold"></h3>
+          <button id="close-modal" class="text-gray-500 hover:text-gray-700">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-4">
+          <div id="modal-content"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Check authentication
+      if (!localStorage.getItem("user_id")) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      // DOM elements
+      const exercisesContainer = document.getElementById('exercises-container');
+      const filterChips = document.querySelectorAll('.filter-chip');
+      const searchInput = document.getElementById('exercise-search');
+      const exerciseModal = document.getElementById('exercise-modal');
+      const modalTitle = document.getElementById('modal-title');
+      const modalContent = document.getElementById('modal-content');
+      const closeModal = document.getElementById('close-modal');
+      const userDropdown = document.getElementById('user-dropdown');
+      const userIcon = document.getElementById('user-icon');
+      const logoutBtn = document.getElementById('logout');
+
+      // Sample exercise data with working image URLs
+      const exercises = [
+        {
+          id: 1,
+          name: "Push Ups",
+          muscleGroup: "chest",
+          equipment: "bodyweight",
+          difficulty: "beginner",
+          description: "A classic bodyweight exercise that targets the chest, shoulders, and triceps.",
+          imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+          steps: [
+            "Start in a plank position with hands slightly wider than shoulder-width",
+            "Lower your body until your chest nearly touches the floor",
+            "Push yourself back up to the starting position",
+            "Keep your core engaged throughout the movement"
+          ]
+        },
+        {
+          id: 2,
+          name: "Pull Ups",
+          muscleGroup: "back",
+          equipment: "pull-up bar",
+          difficulty: "intermediate",
+          description: "Excellent for building upper back and arm strength.",
+          imageUrl: "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+          steps: [
+            "Grab the bar with palms facing away from you",
+            "Hang with arms fully extended",
+            "Pull yourself up until your chin clears the bar",
+            "Lower yourself back down with control"
+          ]
+        },
+        {
+          id: 3,
+          name: "Bodyweight Squats",
+          muscleGroup: "legs",
+          equipment: "bodyweight",
+          difficulty: "beginner",
+          description: "Fundamental lower body exercise that works quads, hamstrings, and glutes.",
+          imageUrl: "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+          steps: [
+            "Stand with feet shoulder-width apart",
+            "Lower your hips back and down as if sitting in a chair",
+            "Keep chest up and knees tracking over toes",
+            "Push through heels to return to standing"
+          ]
+        },
+        {
+          id: 4,
+          name: "Plank",
+          muscleGroup: "core",
+          equipment: "bodyweight",
+          difficulty: "beginner",
+          description: "Excellent for core stability and endurance.",
+          imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=70",
+          steps: [
+            "Start in push-up position but on forearms",
+            "Keep body in straight line from head to heels",
+            "Engage core and hold position",
+            "Avoid letting hips sag or rise"
+          ]
+        },
+        {
+          id: 5,
+          name: "Bicep Curls",
+          muscleGroup: "arms",
+          equipment: "dumbbells",
+          difficulty: "beginner",
+          description: "Isolates the biceps for arm development.",
+          imageUrl: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+          steps: [
+            "Hold dumbbells at sides with palms facing forward",
+            "Curl weights up to shoulder level",
+            "Squeeze biceps at the top",
+            "Lower back down with control"
+          ]
+        },
+        {
+          id: 6,
+          name: "Lunges",
+          muscleGroup: "legs",
+          equipment: "bodyweight",
+          difficulty: "beginner",
+          description: "Great for unilateral leg strength and balance.",
+          imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=90",
+          steps: [
+            "Stand with feet hip-width apart",
+            "Step forward with one leg and lower your hips",
+            "Keep front knee above ankle",
+            "Push back to starting position"
+          ]
+        }
+      ];
+
+      // Current filter state
+      let currentFilter = 'all';
+      let currentSearch = '';
+
+      // Render exercises based on current filter/search
+      function renderExercises() {
+        exercisesContainer.innerHTML = '';
+        
+        const filteredExercises = exercises.filter(exercise => {
+          const matchesFilter = currentFilter === 'all' || exercise.muscleGroup === currentFilter;
+          const matchesSearch = exercise.name.toLowerCase().includes(currentSearch.toLowerCase()) || 
+                              exercise.description.toLowerCase().includes(currentSearch.toLowerCase());
+          return matchesFilter && matchesSearch;
+        });
+
+        if (filteredExercises.length === 0) {
+          exercisesContainer.innerHTML = `
+            <div class="col-span-full text-center py-12 text-gray-500">
+              <i class="fas fa-dumbbell text-4xl mb-3"></i>
+              <p class="text-lg">No exercises found</p>
+              <p class="text-sm mt-2">Try adjusting your filters or search term</p>
+            </div>
+          `;
+          return;
+        }
+
+        filteredExercises.forEach(exercise => {
+          const exerciseCard = document.createElement('div');
+          exerciseCard.className = 'exercise-card bg-white rounded-xl shadow-md overflow-hidden flex flex-col h-full';
+          exerciseCard.innerHTML = `
+            <div class="h-48 overflow-hidden video-placeholder">
+              <img src="${exercise.imageUrl}" alt="${exercise.name}" class="w-full h-full object-cover">
+              <span class="absolute top-2 right-2 bg-purple-600 text-white text-xs px-2 py-1 rounded">
+                ${exercise.difficulty}
+              </span>
+            </div>
+            <div class="p-4 flex-1 flex flex-col">
+              <h3 class="font-bold text-lg mb-1">${exercise.name}</h3>
+              <div class="flex items-center text-sm text-gray-500 mb-2">
+                <span class="capitalize mr-3">${exercise.muscleGroup}</span>
+                <span>•</span>
+                <span class="ml-3">${exercise.equipment}</span>
+              </div>
+              <p class="text-gray-600 text-sm mb-3">${exercise.description}</p>
+              <div class="mt-auto">
+                <button class="view-details-btn w-full bg-purple-100 hover:bg-purple-200 text-purple-700 py-2 rounded-lg text-sm font-medium transition-colors"
+                        data-id="${exercise.id}">
+                  View Details
+                </button>
+              </div>
+            </div>
+          `;
+          exercisesContainer.appendChild(exerciseCard);
+        });
+
+        // Add click handlers to detail buttons
+        document.querySelectorAll('.view-details-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const exerciseId = parseInt(btn.getAttribute('data-id'));
+            showExerciseDetails(exerciseId);
+          });
+        });
+      }
+
+      // Show exercise details in modal
+      function showExerciseDetails(exerciseId) {
+        const exercise = exercises.find(ex => ex.id === exerciseId);
+        if (!exercise) return;
+
+        modalTitle.textContent = exercise.name;
+        
+        modalContent.innerHTML = `
+          <div class="mb-6">
+            <div class="h-64 rounded-lg overflow-hidden mb-4">
+              <img src="${exercise.imageUrl}" alt="${exercise.name}" class="w-full h-full object-cover">
+            </div>
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm capitalize">
+                ${exercise.muscleGroup}
+              </span>
+              <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
+                ${exercise.equipment}
+              </span>
+              <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
+                ${exercise.difficulty}
+              </span>
+            </div>
+            <p class="text-gray-700 mb-4">${exercise.description}</p>
+          </div>
+          
+          <div class="mb-6">
+            <h4 class="font-bold text-lg mb-3">How to perform:</h4>
+            <ol class="list-decimal pl-5 space-y-2">
+              ${exercise.steps.map(step => `<li class="text-gray-700">${step}</li>`).join('')}
+            </ol>
+          </div>
+          
+          <div class="bg-purple-50 rounded-lg p-4">
+            <h4 class="font-bold text-lg mb-2 text-purple-800">Pro Tips</h4>
+            <ul class="list-disc pl-5 space-y-1 text-purple-700">
+              <li>Maintain proper form throughout the exercise</li>
+              <li>Breathe out during the exertion phase</li>
+              <li>Start with lighter intensity to master the movement</li>
+              ${exercise.muscleGroup === 'core' ? '<li>Engage your core throughout the movement</li>' : ''}
+              ${exercise.equipment === 'bodyweight' ? '<li>Focus on controlled movements</li>' : ''}
+            </ul>
+          </div>
+        `;
+
+        exerciseModal.classList.remove('hidden');
+      }
+
+      // Event listeners
+      filterChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          filterChips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          currentFilter = chip.dataset.filter;
+          renderExercises();
+        });
+      });
+
+      searchInput.addEventListener('input', () => {
+        currentSearch = searchInput.value;
+        renderExercises();
+      });
+
+      closeModal.addEventListener('click', () => {
+        exerciseModal.classList.add('hidden');
+      });
+
+      // User dropdown
+      userIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userDropdown.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!userDropdown.contains(e.target) && e.target.id !== 'user-icon') {
+          userDropdown.classList.add('hidden');
+        }
+      });
+
+      logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('user_id');
+        window.location.href = 'login.html';
+      });
+
+      // Initialize
+      renderExercises();
+    });
+  </script>
+</body>
+</html>

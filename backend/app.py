@@ -6,7 +6,8 @@ import google.generativeai as genai
 import os
 import uuid
 from database import db, User, Activity
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
+
 
 load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -28,12 +29,55 @@ with app.app_context():
 def chat():
     try:
         data = request.get_json()
-        user_message = data.get("message", "")
-        response = model.generate_content(user_message)
-        return jsonify({"reply": response.text})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        user_message = data.get("message", "").strip()
+        username = data.get("username", "User")
+        
+        if not user_message:
+            return jsonify({"error": "Message cannot be empty"}), 400
 
+        prompt = f"""You are FitnessAI, a professional fitness coach assistant. The user '{username}' asked:
+"{user_message}"
+
+Respond with these formatting rules:
+1. Use ONLY these HTML tags: <p>, <strong>, <em>, <ul>, <li>
+2. Never use <br> tags
+3. Each paragraph should be wrapped in <p> tags
+4. Use 1-2 relevant emojis
+5. Keep lists properly formatted with <ul> and <li>
+6. Don't include any closing </p> tags (we'll handle that)
+7. Never put <p> tags inside other <p> tags"""
+
+        response = model.generate_content(prompt)
+        
+        # Clean up the response formatting
+        formatted_response = (
+            response.text
+            .replace('</p>', '')  # Remove all closing p tags
+            .replace('<p>', '</p><p>')  # Convert opening p tags to closing+opening
+            .replace('</p><p>', '', 1)  # Remove the first replacement
+            .replace('\n\n', '</p><p>')  # Double newlines become paragraphs
+            .replace('\n', ' ')  # Single newlines become spaces
+            .replace('<br>', ' ')  # Remove any br tags
+            .replace('<br/>', ' ')  # Remove any br tags
+            .replace('  ', ' ')  # Remove double spaces
+        )
+        
+        # Ensure proper HTML structure
+        if not formatted_response.startswith('<p>'):
+            formatted_response = f'<p>{formatted_response}'
+        if not formatted_response.endswith('</p>'):
+            formatted_response = f'{formatted_response}</p>'
+            
+        return jsonify({
+            "reply": formatted_response,
+            "username": username,
+            "timestamp": datetime.now().isoformat(),
+            "type": "fitness_response"
+        })
+        
+    except Exception as e:
+        error_msg = f"<p>Sorry, I encountered an error: {str(e)}</p>"
+        return jsonify({"reply": error_msg, "error": str(e)}), 500
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
@@ -150,6 +194,18 @@ def save_activity():
         return jsonify({"message": "Activity saved successfully"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/set-username", methods=["POST"])
+def set_username():
+    data = request.get_json()
+    username = data.get("username", "User")
+    
+    # In a real app, you'd save this to the database
+    return jsonify({
+        "status": "success",
+        "username": username
+    })
+
 
 if __name__ == "__main__":
     app.run(debug=True)

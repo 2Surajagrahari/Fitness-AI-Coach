@@ -5,6 +5,62 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FitGPT Chat</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #c7d2fe;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #a5b4fc;
+    }
+    
+    /* Message animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+    
+    /* Typing indicator */
+    .typing-indicator {
+      display: inline-flex;
+      align-items: center;
+    }
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      margin: 0 2px;
+      background-color: #8b5cf6;
+      border-radius: 50%;
+      opacity: 0.4;
+      animation: typing-dot 1.4s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(1) {
+      animation-delay: 0s;
+    }
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes typing-dot {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-5px); opacity: 1; }
+    }
+  </style>
   <script>
     tailwind.config = {
       darkMode: false,
@@ -12,54 +68,135 @@
         extend: {
           fontFamily: {
             custom: ['"Segoe UI"', 'sans-serif']
+          },
+          colors: {
+            primary: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              200: '#ddd6fe',
+              300: '#c4b5fd',
+              400: '#a78bfa',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+              800: '#5b21b6',
+              900: '#4c1d95',
+            },
+            secondary: {
+              500: '#ec4899',
+              600: '#db2777',
+            }
           }
         }
       }
     };
   </script>
 </head>
-<body class="font-custom bg-gradient-to-br from-purple-300 via-pink-200 to-yellow-200 min-h-screen flex items-center justify-center">
+<body class="font-custom bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 min-h-screen flex items-center justify-center">
   
-  <div id="chat-ui" class="w-full h-screen bg-white/80 backdrop-blur-xl shadow-inner flex flex-col">
+  <div id="chat-ui" class="w-full max-w-4xl h-[90vh] bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl flex flex-col overflow-hidden border border-white/20">
 
-    <div class="flex justify-between items-center px-6 py-4 bg-white shadow-md">
-      <h1 class="text-2xl font-bold text-purple-700">FitGPT Chat</h1>
+    <!-- Header -->
+    <div class="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-primary-600 to-secondary-600">
+      <div class="flex items-center gap-3">
+        <div class="bg-white/20 p-2 rounded-lg">
+          <i class="fas fa-dumbbell text-white text-xl"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-white">FitGPT</h1>
+      </div>
       <div class="relative">
-        <button id="user-icon" class="text-2xl p-2 bg-purple-100 rounded-full">👤</button>
-        <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-40 bg-white shadow-md rounded-lg overflow-hidden">
-          <a href="#" id="view-profile" class="block px-4 py-2 hover:bg-purple-100">View Profile</a>
-          <a href="dashboard.html" class="block px-4 py-2 hover:bg-purple-100">Dashboard</a>
-          <a href="#" id="logout" class="block px-4 py-2 text-red-600 hover:bg-purple-100">Logout</a>
+        <button id="user-icon" class="text-xl p-2 bg-white/20 hover:bg-white/30 text-white rounded-full transition-colors">
+          <i class="fas fa-user"></i>
+        </button>
+        <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg overflow-hidden border border-gray-200 z-10">
+          <a href="#" id="view-profile" class="block px-4 py-3 hover:bg-primary-50 text-gray-700 flex items-center gap-2">
+            <i class="fas fa-user-circle text-primary-600"></i>
+            <span>View Profile</span>
+          </a>
+          <a href="dashboard.html" class="block px-4 py-3 hover:bg-primary-50 text-gray-700 flex items-center gap-2">
+            <i class="fas fa-chart-line text-primary-600"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="#" id="logout" class="block px-4 py-3 hover:bg-primary-50 text-red-600 flex items-center gap-2">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+          </a>
         </div>
       </div>
     </div>
 
-    <div id="chat-body" class="flex-1 p-6 overflow-y-auto space-y-4 bg-gradient-to-br from-white to-purple-100"></div>
+    <!-- Chat Body -->
+    <div id="chat-body" class="flex-1 p-6 overflow-y-auto space-y-4 bg-gradient-to-br from-white to-primary-50">
+      <!-- Welcome message -->
+      <div class="flex justify-start">
+        <div class="max-w-[80%] md:max-w-[70%]">
+          <div class="px-5 py-3 rounded-2xl bg-primary-100 text-gray-800 shadow-sm">
+            <div class="font-bold text-primary-700 mb-1 flex items-center gap-2">
+              <i class="fas fa-robot"></i>
+              <span>FitGPT</span>
+            </div>
+            <p>Hello! I'm your fitness assistant. How can I help you today? You can ask about workouts, nutrition, or track your fitness progress.</p>
+          </div>
+          <div class="text-xs text-gray-500 mt-1 ml-1">Today at <span id="current-time"></span></div>
+        </div>
+      </div>
+    </div>
 
-    <div class="flex items-center justify-center gap-2 p-4 border-t bg-white shadow-inner">
-      <input type="text" id="input-box" placeholder="Type a message..." autocomplete="off" class="flex-1 px-4 py-3 border rounded-full focus:outline-none focus:ring-2 focus:ring-purple-400" />
-      <button id="voice-btn" class="text-2xl bg-pink-500 hover:bg-pink-600 text-white p-3 rounded-full">🎙️</button>
-      <button id="send-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-full">Send</button>
+    <!-- Input Area -->
+     
+    <div class="flex items-center gap-3 p-4 border-t border-gray-200 bg-white">
+      <button id="voice-btn" class="text-xl bg-primary-100 hover:bg-primary-200 text-primary-700 p-3 rounded-full transition-colors">
+        <i class="fas fa-microphone"></i>
+      </button>
+      <div class="flex-1 relative">
+        <input 
+          type="text" 
+          id="input-box" 
+          placeholder="Ask about workouts, nutrition..." 
+          autocomplete="off" 
+          class="w-full px-5 py-3 border-0 bg-gray-100 hover:bg-gray-200 focus:bg-white focus:ring-2 focus:ring-primary-300 rounded-full transition-all duration-200 pr-12" 
+        />
+        <button id="send-btn" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-primary-600 hover:text-primary-800">
+          <i class="fas fa-paper-plane text-xl"></i>
+        </button>
+      </div>
     </div>
   </div>
 
   <script src="script.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Set current time
+      const now = new Date();
+      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('current-time').textContent = timeString;
+      
+      // Authentication check
       if (!localStorage.getItem("user_id")) {
         window.location.href = "login.html";
       }
-    });
 
-    document.getElementById("user-icon").addEventListener("click", () => {
-      const dropdown = document.getElementById("user-dropdown");
-      dropdown.classList.toggle("hidden");
-    });
-  
-    document.getElementById("logout").addEventListener("click", function(e) {
-      e.preventDefault();
-      localStorage.removeItem("user_id");
-      window.location.href = "login.html";
+      // User dropdown toggle
+      document.getElementById("user-icon").addEventListener("click", (e) => {
+        e.stopPropagation();
+        const dropdown = document.getElementById("user-dropdown");
+        dropdown.classList.toggle("hidden");
+      });
+    
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById("user-dropdown");
+        if (!dropdown.contains(e.target) && e.target.id !== 'user-icon') {
+          dropdown.classList.add("hidden");
+        }
+      });
+      
+      // Logout handler
+      document.getElementById("logout").addEventListener("click", function(e) {
+        e.preventDefault();
+        localStorage.removeItem("user_id");
+        window.location.href = "login.html";
+      });
     });
   </script>
 </body>

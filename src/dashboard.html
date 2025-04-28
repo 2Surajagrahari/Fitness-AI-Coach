@@ -7,71 +7,192 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            },
+            secondary: {
+              500: '#ec4899',
+              600: '#db2777',
+            }
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen flex items-center justify-center p-4">
+<body class="bg-gray-50 font-sans min-h-screen p-4 md:p-6">
 
-  <div class="max-w-4xl w-full bg-white rounded-2xl shadow-lg p-6 space-y-6">
-    <div class="flex justify-between items-center">
-      <div>
-        <h1 class="text-3xl font-bold text-blue-700 mb-1"><i class="fas fa-walking"></i> Activity Dashboard</h1>
-        <p class="text-gray-600" id="current-date"></p>
+  <div class="max-w-6xl w-full mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-primary-600 to-secondary-600 p-6 text-white">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 class="text-3xl font-bold flex items-center gap-3">
+            <i class="fas fa-walking"></i> 
+            <span>Activity Dashboard</span>
+          </h1>
+          <p class="text-primary-100" id="current-date"></p>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="bg-white/20 p-2 rounded-lg">
+            <span class="font-medium">Current Streak:</span>
+            <span id="streak-count" class="font-bold ml-2">0</span> days
+          </div>
+          <a href="index.html" class="bg-white text-primary-600 hover:bg-gray-100 p-3 rounded-full shadow-sm transition-all">
+            <i class="fas fa-comments text-xl"></i>
+          </a>
+        </div>
       </div>
-      <a href="index.html" class="text-blue-600 hover:text-blue-800">
-        <i class="fas fa-comments text-2xl"></i>
-      </a>
     </div>
 
-    <div class="bg-white rounded-xl p-4 shadow-md mb-6">
-      <h2 class="text-xl font-semibold mb-3 text-gray-700"><i class="fas fa-edit"></i> Manual Entry</h2>
-      <form id="manual-entry-form" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Steps</label>
-          <input type="number" id="manual-steps" class="w-full px-3 py-2 border rounded-lg" required>
+    <!-- Main Content -->
+    <div class="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Left Column -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm">Today's Steps</p>
+                <h3 id="today-steps" class="text-2xl font-bold text-gray-800">--</h3>
+              </div>
+              <div class="bg-primary-100 text-primary-600 p-3 rounded-full">
+                <i class="fas fa-shoe-prints text-xl"></i>
+              </div>
+            </div>
+            <div class="mt-2">
+              <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div id="steps-progress" class="h-full bg-primary-500 rounded-full" style="width: 0%"></div>
+              </div>
+              <p class="text-xs text-gray-500 mt-1" id="steps-goal">0 of 10,000</p>
+            </div>
+          </div>
+          
+          <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm">Today's Calories</p>
+                <h3 id="today-calories" class="text-2xl font-bold text-gray-800">--</h3>
+              </div>
+              <div class="bg-orange-100 text-orange-600 p-3 rounded-full">
+                <i class="fas fa-fire text-xl"></i>
+              </div>
+            </div>
+            <div class="mt-2">
+              <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div id="calories-progress" class="h-full bg-orange-500 rounded-full" style="width: 0%"></div>
+              </div>
+              <p class="text-xs text-gray-500 mt-1" id="calories-goal">0 of 2,000</p>
+            </div>
+          </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Calories</label>
-          <input type="number" step="0.1" id="manual-calories" class="w-full px-3 py-2 border rounded-lg" required>
+
+        <!-- Chart -->
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-chart-line"></i>
+            <span>Weekly Progress</span>
+          </h2>
+          <div class="h-64">
+            <canvas id="activityChart"></canvas>
+          </div>
         </div>
-        <div class="flex items-end">
-          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg w-full">
-            Save Entry
+
+        <!-- Recent Activity -->
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-history"></i>
+            <span>Recent Activity</span>
+          </h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="text-xs text-gray-500 uppercase border-b">
+                <tr>
+                  <th class="py-3 px-4 text-left">Date</th>
+                  <th class="py-3 px-4 text-right">Steps</th>
+                  <th class="py-3 px-4 text-right">Calories</th>
+                </tr>
+              </thead>
+              <tbody id="activityTableBody" class="divide-y divide-gray-200"></tbody>
+            </table>
+            <div id="empty-state" class="py-12 text-center hidden">
+              <i class="fas fa-clipboard-list text-4xl text-gray-300 mb-3"></i>
+              <p class="text-gray-500">No activity recorded yet</p>
+              <button id="add-first-entry" class="mt-4 bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg text-sm">
+                Add Your First Entry
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="space-y-6">
+        <!-- Quick Entry -->
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-plus-circle"></i>
+            <span>Quick Entry</span>
+          </h2>
+          <form id="manual-entry-form" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Steps</label>
+              <input type="number" id="manual-steps" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="e.g. 8500" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Calories (kcal)</label>
+              <input type="number" step="0.1" id="manual-calories" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500" placeholder="e.g. 1800" required>
+            </div>
+            <button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+              <i class="fas fa-save"></i>
+              Save Entry
+            </button>
+          </form>
+        </div>
+
+        <!-- Activity Days -->
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <i class="fas fa-calendar-check"></i>
+            <span>Activity Days</span>
+          </h2>
+          <div id="daysQueue" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-3 gap-3"></div>
+          <div id="empty-days" class="py-8 text-center hidden">
+            <i class="fas fa-calendar-times text-3xl text-gray-300 mb-2"></i>
+            <p class="text-gray-500 text-sm">No activity days yet</p>
+          </div>
+        </div>
+
+        <!-- Tips Card -->
+        <a href="exercises.html" class="bg-purple-100 hover:bg-purple-200 text-purple-700 px-4 py-3 rounded-full flex items-center gap-1">
+          <i class="fas fa-dumbbell"></i>
+          <span class="hidden sm:inline">Exercises</span>
+        
+        </a>
+        <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 shadow-sm">
+          <h2 class="text-lg font-semibold text-blue-800 mb-3 flex items-center gap-2">
+            <i class="fas fa-lightbulb"></i>
+            <span>Health Tip</span>
+          </h2>
+          <p id="health-tip" class="text-blue-700 text-sm">
+            Loading health tip...
+          </p>
+          <button id="refresh-tip" class="mt-3 text-blue-600 hover:text-blue-800 text-xs flex items-center gap-1">
+            <i class="fas fa-sync-alt"></i>
+            New Tip
           </button>
         </div>
-      </form>
-    </div>
-    
-    <div class="bg-blue-100 p-4 rounded-xl flex items-center justify-between shadow-md">
-      <div class="flex items-center gap-4">
-        <i class="fas fa-fire text-3xl text-orange-500"></i>
-        <div>
-          <h2 class="text-xl font-semibold">Current Streak</h2>
-          <p class="text-gray-700 text-sm"><span id="streak-count">0</span> days</p>
-        </div>
       </div>
-    </div>
-
-    <div class="bg-green-50 p-4 rounded-xl shadow-md">
-      <h2 class="text-xl font-semibold mb-3 text-gray-700"><i class="fas fa-calendar-check"></i> Recent Days</h2>
-      <div id="daysQueue" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
-    </div>
-
-    <div class="bg-white rounded-xl p-4 shadow-md">
-      <h2 class="text-xl font-semibold mb-2 text-center text-gray-700"><i class="fas fa-chart-line"></i> Progress Chart</h2>
-      <canvas id="activityChart" height="150"></canvas>
-    </div>
-
-    <div class="overflow-x-auto bg-white shadow-md rounded-xl p-4">
-      <h2 class="text-xl font-semibold text-gray-700 mb-3"><i class="fas fa-list"></i> Activity History</h2>
-      <table class="w-full text-sm text-left text-gray-700">
-        <thead class="text-xs uppercase bg-gray-100 text-gray-600">
-          <tr>
-            <th scope="col" class="py-2 px-4">Date</th>
-            <th scope="col" class="py-2 px-4">Steps</th>
-            <th scope="col" class="py-2 px-4">Calories</th>
-          </tr>
-        </thead>
-        <tbody id="activityTableBody" class="bg-white divide-y divide-gray-200"></tbody>
-      </table>
     </div>
   </div>
 
@@ -83,37 +204,283 @@
         return;
       }
 
-      document.getElementById("current-date").innerText = `Today: ${new Date().toDateString()}`;
+      // Format today's date
+      const today = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById("current-date").innerText = today.toLocaleDateString('en-US', options);
       
-      try {
-        const res = await fetch(`http://localhost:5000/dashboard-data/${userId}`);
-        const data = await res.json();
-        
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        
-        const labels = data.activity.map(item => item.date).reverse();
-        const stepData = data.activity.map(item => item.steps).reverse();
-        const calorieData = data.activity.map(item => item.calories).reverse();
-        
-        document.getElementById("streak-count").innerText = data.streak;
-        renderChart(labels, stepData, calorieData);
-        renderHistory(data.activity);
-        renderDaysQueue(data.activity);
-      } catch (error) {
-        console.error("Failed to load dashboard data:", error);
-        alert("Failed to load activity data");
+      // DOM elements
+      const activityTableBody = document.getElementById("activityTableBody");
+      const daysQueue = document.getElementById("daysQueue");
+      const emptyState = document.getElementById("empty-state");
+      const emptyDays = document.getElementById("empty-days");
+      const addFirstEntryBtn = document.getElementById("add-first-entry");
+      const healthTipElement = document.getElementById("health-tip");
+      const refreshTipBtn = document.getElementById("refresh-tip");
+      const manualEntryForm = document.getElementById("manual-entry-form");
+      
+      // Chart variables
+      let activityChart = null;
+      
+      // Goals
+      const DAILY_STEP_GOAL = 10000;
+      const DAILY_CALORIE_GOAL = 2000;
+
+      // Health tips - moved to the beginning and made sure it's properly initialized
+      const healthTips = [
+        "Walking 10,000 steps daily can significantly improve cardiovascular health.",
+        "Drink water before meals to help with portion control and digestion.",
+        "Stand up and move for 5 minutes every hour to reduce sedentary risks.",
+        "Aim for 7-9 hours of sleep for optimal health and recovery.",
+        "Incorporate strength training 2-3 times per week for balanced fitness.",
+        "Eating protein with every meal helps maintain muscle mass.",
+        "Stretching daily improves flexibility and reduces injury risk.",
+        "Taking short walking breaks can boost creativity and productivity.",
+        "Eating slowly helps with digestion and prevents overeating.",
+        "Blue light filters in the evening can improve sleep quality."
+      ];
+
+      // Show a random health tip
+      function showRandomTip() {
+        const randomTip = healthTips[Math.floor(Math.random() * healthTips.length)];
+        healthTipElement.textContent = randomTip;
       }
 
-      // Manual data entry form
-      document.getElementById("manual-entry-form").addEventListener("submit", async (e) => {
+      // Initialize health tip immediately
+      showRandomTip();
+
+      // Set up event listeners
+      refreshTipBtn.addEventListener("click", (e) => {
         e.preventDefault();
-        const steps = parseInt(document.getElementById("manual-steps").value);
-        const calories = parseFloat(document.getElementById("manual-calories").value);
+        showRandomTip();
+      });
+
+      // Load dashboard data
+      async function loadDashboardData() {
+        try {
+          const res = await fetch(`http://localhost:5000/dashboard-data/${userId}`);
+          const data = await res.json();
+          
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          
+          // Process data
+          const sortedData = data.activity.sort((a, b) => new Date(b.date) - new Date(a.date));
+          const hasData = sortedData.length > 0;
+          
+          // Update streak
+          document.getElementById("streak-count").textContent = data.streak || 0;
+          
+          // Update today's stats if available
+          if (hasData) {
+            const todayStr = today.toISOString().split('T')[0];
+            const todayData = sortedData.find(item => item.date === todayStr);
+            if (todayData) {
+              updateTodayStats(todayData.steps, todayData.calories);
+            }
+          }
+          
+          // Render chart
+          renderChart(sortedData.slice(0, 7).reverse());
+          
+          // Render history
+          renderHistory(sortedData);
+          
+          // Render activity days
+          renderDaysQueue(sortedData);
+          
+          // Show empty states if no data
+          emptyState.classList.toggle("hidden", hasData);
+          emptyDays.classList.toggle("hidden", hasData);
+          activityTableBody.classList.toggle("hidden", !hasData);
+          
+        } catch (error) {
+          console.error("Failed to load dashboard data:", error);
+          emptyState.classList.remove("hidden");
+          emptyDays.classList.remove("hidden");
+          activityTableBody.classList.add("hidden");
+        }
+      }
+
+      // Update today's stats
+      function updateTodayStats(steps, calories) {
+        document.getElementById("today-steps").textContent = steps.toLocaleString();
+        document.getElementById("today-calories").textContent = calories.toLocaleString();
+        
+        // Steps progress
+        const stepsPercent = Math.min(Math.round((steps / DAILY_STEP_GOAL) * 100), 100);
+        document.getElementById("steps-progress").style.width = `${stepsPercent}%`;
+        document.getElementById("steps-goal").textContent = 
+          `${steps.toLocaleString()} of ${DAILY_STEP_GOAL.toLocaleString()}`;
+        
+        // Calories progress
+        const caloriesPercent = Math.min(Math.round((calories / DAILY_CALORIE_GOAL) * 100), 100);
+        document.getElementById("calories-progress").style.width = `${caloriesPercent}%`;
+        document.getElementById("calories-goal").textContent = 
+          `${calories.toLocaleString()} of ${DAILY_CALORIE_GOAL.toLocaleString()}`;
+      }
+
+      // Render chart
+      function renderChart(data) {
+        const ctx = document.getElementById("activityChart").getContext("2d");
+        
+        // Destroy previous chart if exists
+        if (activityChart) {
+          activityChart.destroy();
+        }
+        
+        // Prepare data
+        const labels = data.map(item => {
+          const date = new Date(item.date);
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }).reverse();
+        
+        const stepData = data.map(item => item.steps).reverse();
+        const calorieData = data.map(item => item.calories).reverse();
+        
+        // Create new chart
+        activityChart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Steps",
+                data: stepData,
+                borderColor: "rgb(59, 130, 246)",
+                backgroundColor: "rgba(59, 130, 246, 0.05)",
+                tension: 0.3,
+                fill: true,
+                borderWidth: 2,
+                pointBackgroundColor: "rgb(59, 130, 246)",
+                pointRadius: 3,
+                pointHoverRadius: 5
+              },
+              {
+                label: "Calories",
+                data: calorieData,
+                borderColor: "rgb(234, 88, 12)",
+                backgroundColor: "rgba(234, 88, 12, 0.05)",
+                tension: 0.3,
+                fill: true,
+                borderWidth: 2,
+                pointBackgroundColor: "rgb(234, 88, 12)",
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                yAxisID: 'y1'
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              tooltip: {
+                mode: 'index',
+                intersect: false,
+              },
+              legend: {
+                position: 'top',
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Steps'
+                }
+              },
+              y1: {
+                beginAtZero: true,
+                position: 'right',
+                title: {
+                  display: true,
+                  text: 'Calories'
+                },
+                grid: {
+                  drawOnChartArea: false,
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Render history table
+      function renderHistory(data) {
+        activityTableBody.innerHTML = "";
+        
+        data.slice(0, 7).forEach(item => {
+          const row = document.createElement("tr");
+          row.className = "hover:bg-gray-50";
+          
+          row.innerHTML = `
+            <td class="py-3 px-4">${formatDate(item.date)}</td>
+            <td class="py-3 px-4 text-right font-medium">${item.steps.toLocaleString()}</td>
+            <td class="py-3 px-4 text-right font-medium">${item.calories.toLocaleString()}</td>
+          `;
+          
+          activityTableBody.appendChild(row);
+        });
+      }
+
+      // Format date for display
+      function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric',
+          year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+        });
+      }
+
+      // Render activity days
+      function renderDaysQueue(data) {
+        daysQueue.innerHTML = "";
+        
+        data.slice(0, 9).forEach(item => {
+          const reachedStepGoal = item.steps >= DAILY_STEP_GOAL;
+          const dayCard = document.createElement("div");
+          dayCard.className = "flex flex-col items-center p-2 bg-white border rounded-lg shadow-xs";
+          
+          dayCard.innerHTML = `
+            <div class="text-xs font-medium text-gray-500">${formatDate(item.date)}</div>
+            <div class="mt-1 text-lg ${reachedStepGoal ? 'text-green-500' : 'text-red-500'}">
+              <i class="fas ${reachedStepGoal ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+            </div>
+            <div class="text-xs mt-1 text-center">
+              <span class="font-medium">${(item.steps / 1000).toFixed(1)}k</span> steps
+            </div>
+          `;
+          
+          daysQueue.appendChild(dayCard);
+        });
+      }
+
+      // Manual data entry form - fixed to prevent page refresh
+      manualEntryForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const stepsInput = document.getElementById("manual-steps");
+        const caloriesInput = document.getElementById("manual-calories");
+        
+        const steps = parseInt(stepsInput.value);
+        const calories = parseFloat(caloriesInput.value);
+        
+        if (isNaN(steps) || steps <= 0) {
+          alert("Please enter a valid number of steps (greater than 0)");
+          return;
+        }
+        
+        if (isNaN(calories) || calories <= 0) {
+          alert("Please enter a valid number of calories (greater than 0)");
+          return;
+        }
         
         try {
-          await fetch("http://localhost:5000/save-activity", {
+          const response = await fetch("http://localhost:5000/save-activity", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -122,86 +489,45 @@
               calories: calories
             })
           });
-          location.reload(); //Refresh to show new data
-        } catch (error) {
-          alert("Failed to save activity");
-        }
-      });
-    });
-
-    function renderChart(labels, steps, calories) {
-      const ctx = document.getElementById("activityChart").getContext("2d");
-      new Chart(ctx, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [
-            {
-              label: "Steps",
-              data: steps,
-              borderColor: "rgb(59, 130, 246)",
-              backgroundColor: "rgba(59, 130, 246, 0.1)",
-              tension: 0.4,
-              fill: true
-            },
-            {
-              label: "Calories",
-              data: calories,
-              borderColor: "rgb(234, 88, 12)",
-              backgroundColor: "rgba(234, 88, 12, 0.1)",
-              tension: 0.4,
-              fill: true
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true
-            }
+          
+          if (response.ok) {
+            // Clear form
+            stepsInput.value = "";
+            caloriesInput.value = "";
+            
+            // Show success message
+            const originalText = manualEntryForm.querySelector('button[type="submit"]').innerHTML;
+            const submitBtn = manualEntryForm.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<i class="fas fa-check"></i> Entry Saved!';
+            submitBtn.classList.remove('bg-primary-600', 'hover:bg-primary-700');
+            submitBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+            
+            // Reload data without page refresh
+            await loadDashboardData();
+            
+            // Reset button after 2 seconds
+            setTimeout(() => {
+              submitBtn.innerHTML = originalText;
+              submitBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+              submitBtn.classList.add('bg-primary-600', 'hover:bg-primary-700');
+            }, 2000);
+          } else {
+            throw new Error("Failed to save activity");
           }
+        } catch (error) {
+          console.error("Error saving activity:", error);
+          alert("Failed to save activity. Please try again.");
         }
       });
-    }
 
-    function renderHistory(data) {
-      const tableBody = document.getElementById("activityTableBody");
-      tableBody.innerHTML = "";
-      data.forEach(item => {
-        const row = `
-          <tr>
-            <td class="py-2 px-4">${item.date}</td>
-            <td class="py-2 px-4">${item.steps}</td>
-            <td class="py-2 px-4">${item.calories}</td>
-          </tr>
-        `;
-        tableBody.innerHTML += row;
+      // Add first entry button
+      addFirstEntryBtn.addEventListener("click", () => {
+        document.getElementById("manual-steps").focus();
       });
-    }
 
-    function renderDaysQueue(data) {
-      const container = document.getElementById("daysQueue");
-      container.innerHTML = "";
-      const goalSteps = 10000;
-      const sorted = data.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-      sorted.forEach(item => {
-        const reachedGoal = item.steps >= goalSteps;
-        const icon = reachedGoal
-          ? '<i class="fas fa-check-circle text-green-500 text-2xl"></i>'
-          : '<i class="fas fa-times-circle text-red-500 text-2xl"></i>';
-
-        const dayCard = `
-          <div class="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-sm">
-            <span class="text-gray-700 text-sm font-medium">${item.date}</span>
-            ${icon}
-          </div>
-        `;
-        container.innerHTML += dayCard;
-      });
-    }
+      // Initial load
+      await loadDashboardData();
+    });
   </script>
 </body>
 </html>
